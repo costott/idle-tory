@@ -12,14 +12,14 @@ const PRICE_MULTIPLIER: f32 = 1.25f32;
 
 struct Upgrade {
     name: String,
-    price: f32,
-    mps_add: f32,
+    price: u64,
+    mps_add: u64,
     level: u32,
     spaces: [usize; 4],
 }
 
 impl Upgrade{
-    fn new(name: String, start_price: f32, mps_add: f32) -> Upgrade {
+    fn new(name: String, start_price: u64, mps_add: u64) -> Upgrade {
         Upgrade {
             name,
             price: start_price,
@@ -31,7 +31,7 @@ impl Upgrade{
 }
 
 struct StatusManager {
-    status_info: HashMap<u32, String>
+    status_info: HashMap<u64, String>
 }
 
 impl StatusManager {
@@ -41,10 +41,11 @@ impl StatusManager {
         }
     }
 
-    fn get_status(&self, current_money: f32) -> String {
+    /// returns player status with current money
+    fn get_status(&self, current_money: u64) -> String {
         let mut highest = &0; // highest status number 
         for key in self.status_info.keys() {
-            if current_money > *key as f32 && key > highest {
+            if current_money > *key && key > highest {
                 highest = key;
             }
         }
@@ -53,8 +54,8 @@ impl StatusManager {
 }
 
 struct GameInfo {
-    money: f32,
-    mps: f32,
+    money: u64,
+    mps: u64,
     upgrades: Vec<Upgrade>,
     upgrade_num: usize, // current upgrade up to
     status_manager: StatusManager,
@@ -64,8 +65,8 @@ struct GameInfo {
 impl GameInfo {
     fn new() -> GameInfo {
         GameInfo {
-            money: 5.0,
-            mps: 1.0,
+            money: 5_00,
+            mps: 1_00,
             upgrades: make_upgrades(),
             upgrade_num: 2,
             status_manager: StatusManager::new(),
@@ -81,7 +82,7 @@ impl GameInfo {
     /// updates the number of upgrades unlocked
     fn update_upgrade_num(&mut self) {
         if self.upgrade_num >= self.upgrades.len() {return}
-        if self.money < self.upgrades[self.upgrade_num].price * 0.1 {return}
+        if self.money < self.upgrades[self.upgrade_num].price / 10 {return}
 
         self.upgrade_num += 1;
         self.update_upgrade_num();
@@ -91,30 +92,32 @@ impl GameInfo {
 /// makes and returns the upgrades at the start of the game
 fn make_upgrades() -> Vec<Upgrade> {
     vec![
-        Upgrade::new(String::from("tax fraud"), 5.0, 0.1), // (50s)
-        Upgrade::new(String::from("lie to public"), 25.0, 0.75), // x5 x7.5 (33s) x0.66667
-        Upgrade::new(String::from("pray to bojo"), 500.0, 25.0), // x20 x33.3 (20s) x0.6061
-        Upgrade::new(String::from("public scandal"), 20_000.0, 2083.0), // x40 x80.9 (9.6s) x0.48
-        Upgrade::new(String::from("break lockdown laws"), 4_000_000.0, 1_070_000.0), // x200 x514 (3.74s) x0.39
-        Upgrade::new(String::from("privatise the NHS"), 20_000_000_000.0, 17_900_000_000.0) // x5000 x16728 (1.12) x0.3
+        Upgrade::new(String::from("tax fraud"), 500, 10), // (50s)
+        Upgrade::new(String::from("lie to public"), 25_00, 75), // x5 x7.5 (33s) x0.66667
+        Upgrade::new(String::from("pray to bojo"), 500_00, 25_00), // x20 x33.3 (20s) x0.6061
+        Upgrade::new(String::from("public scandal"), 20_000_00, 2083_00), // x40 x80.9 (9.6s) x0.48
+        Upgrade::new(String::from("break lockdown laws"), 4_000_000_00, 1_070_000_00), // x200 x514 (3.74s) x0.39
+        Upgrade::new(String::from("privatise the NHS"), 20_000_000_000_00, 17_900_000_000_00) // x5000 x16728 (1.12) x0.3
     ]
 }
 
 /// makes and returns the statuses at the start of the game
-fn make_statuses() -> HashMap<u32, String> {
-    let mut statuses: HashMap<u32, String> = HashMap::new();
+fn make_statuses() -> HashMap<u64, String> {
+    let mut statuses: HashMap<u64, String> = HashMap::new();
     statuses.insert(0, String::from("peasant"));
-    statuses.insert(100, String::from("basically a labour voter"));
-    statuses.insert(500, String::from("countryside bigot"));
-    statuses.insert(1000, String::from("facebook conspiracist"));
-    statuses.insert(5000, String::from("twitter terf"));
-    statuses.insert(10_000, String::from("alt-right anti-vaxxer"));
-    statuses.insert(100_000, String::from("liz truss"));
-    statuses.insert(10_000_000, String::from("tory MP"));
-    statuses.insert(1_000_000_000, String::from("resurrected margaret thatcher"));
+    statuses.insert(100_00, String::from("basically a labour voter"));
+    statuses.insert(500_00, String::from("countryside conservative"));
+    statuses.insert(1000_00, String::from("facebook conspiracist"));
+    statuses.insert(5000_00, String::from("twitter terf"));
+    statuses.insert(10_000_00, String::from("alt-right anti-vaxxer"));
+    statuses.insert(100_000_00, String::from("liz truss"));
+    statuses.insert(10_000_000_00, String::from("tory MP"));
+    statuses.insert(1_000_000_000_00, String::from("resurrected margaret thatcher"));
     statuses
 }
 
+/// calculate the number of spaces upgrades need to add to their strings
+/// so that the upgrade outputs are all aligned
 fn calculate_upgrade_spaces(game_info: &mut GameInfo){
     let mut maxes: [usize; 4] = [0, 0, 0, 0];
     for upgrade in &game_info.upgrades[0..game_info.upgrade_num] {
@@ -143,21 +146,24 @@ fn calculate_upgrade_spaces(game_info: &mut GameInfo){
 }
 
 const UNITS: [&str; 5] = ["K", "M", "B", "T", "Q"];
-const VALUES: [u64; 5] = [1_000, 1_000_000, 1_000_000_000, 1_000_000_000_000, 1_000_000_000_000_000];
+const VALUES: [u64; 5] = [1_000_00, 1_000_000_00, 1_000_000_000_00, 1_000_000_000_000_00, 1_000_000_000_000_000_00];
 /// converts a given money into its display form
-fn display_money(money: f32) -> String {
-    if money < 1_000f32 {
-        return format!("{:.2}", money);
-    }
-    let mut unit_i = 0;
-    for (i, value) in VALUES.into_iter().enumerate() {
-        if value as f32 > money {
-            unit_i = i - 1;
-            break;
+fn display_money(money: u64) -> String {
+    let money_str = money.to_string();
+    if money < 1_000_00 {
+        let l = money_str.len();
+        if l == 1 {
+            return format!("0.0{}", money_str);
+        } else if l == 2{
+            return format!("0.{}", &money_str[0..2])
         }
+        return format!("{}.{}", &money_str[0..l-2], &money_str[l-2..l]);
     }
 
-    format!("{:.3}{}", money / VALUES[unit_i] as f32, UNITS[unit_i])
+    let unit_i = (money_str.len()-3) / 3 - 1; // (n-1) DIV 3 - 1 where n = len-2 (get rid of pennies)
+    let over_point = money / VALUES[unit_i];
+    let l = over_point.to_string().len();
+    format!("{}.{}{}", over_point, &money_str[l..l+3], UNITS[unit_i])
 }
 
 /// draws the UI for each frame
@@ -215,7 +221,7 @@ fn display_ui(game_info: &mut GameInfo)  {
             },
             game_info.upgrades[i].level,
             " ".repeat(game_info.upgrades[i].spaces[3]),
-            display_money(game_info.upgrades[i].mps_add * game_info.upgrades[i].level as f32),
+            display_money(game_info.upgrades[i].mps_add * game_info.upgrades[i].level as u64),
             style::RESET_ALL
         ).as_str();
     }
@@ -234,7 +240,7 @@ fn display_ui(game_info: &mut GameInfo)  {
     game_info.stdout.flush().unwrap();
 }
 
-/// process what happens when an input is recieved into the channel
+/// process what happens when an input is received into the channel
 fn recieve_input(rx: &std::sync::mpsc::Receiver<char>, game_info: &mut GameInfo) {
     // recieve the input
     #[allow(unused_assignments)]
@@ -263,7 +269,8 @@ fn buy_upgrade(game_info: &mut GameInfo, upgrade_index: usize) {
     game_info.money -= game_info.upgrades[upgrade_index].price;   // spend money
     game_info.mps += game_info.upgrades[upgrade_index].mps_add;   // increase mps
     game_info.upgrades[upgrade_index].level += 1;                 // increase level
-    game_info.upgrades[upgrade_index].price *= PRICE_MULTIPLIER;  // increase price
+    game_info.upgrades[upgrade_index].price = (game_info.upgrades[upgrade_index].price as f32 
+        * PRICE_MULTIPLIER) as u64;                               // increase price
 }
 
 fn main() {
@@ -295,6 +302,11 @@ fn main() {
     let mut last_frame_time = Instant::now();
     let mut dt;
 
+    let mut increase: f32;
+    // keeps track of any overflowed values as money is using
+    // integers, so fractions of pennies are truncated
+    let mut overflow: f32  = 0.0; 
+
     // main thread
     loop {
         thread::sleep(Duration::from_millis((1000f32/FPS) as u64));
@@ -305,7 +317,14 @@ fn main() {
         display_ui(&mut game_info);
 
         // increase the money with the mps
-        game_info.money += game_info.mps * dt.as_secs_f32();
+        increase = game_info.mps as f32 * dt.as_secs_f32();
+
+        game_info.money += increase as u64;
+        overflow += increase - increase.trunc(); 
+        if overflow > 1f32 { // enough overflow to make an impact
+            game_info.money += overflow as u64;
+            overflow -= overflow.trunc();
+        }
 
         recieve_input(&rx, &mut game_info);
 
